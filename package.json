@@ -1,0 +1,11 @@
+{
+  "name": "express-obv",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "chai": "~1.8.1",
+    "sinon": "~1.7.3",
+    "sinon-chai": "~2.4.0",
+    "mocha": "~1.14.0"
+  }
+}

@@ -1,0 +1,5 @@
+*.swp
+*.swo
+tests
+!src/tests
+node_modules
