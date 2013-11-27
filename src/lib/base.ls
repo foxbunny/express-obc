@@ -24,7 +24,9 @@ base.controller =
 
   # ## `controller.path`
   #
-  # The path for which this controller with handle request. This property
+  # The path for which this controller with handle request.
+  #
+  # This property must be set to a valid Express path. It is `null` by default.
   #
   path: null
 
