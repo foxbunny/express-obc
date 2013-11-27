@@ -272,7 +272,7 @@ base.controller =
   # methods have access to `req`, `res`, and `next`.
   #
   handle: (req, res, next) ->
-    o = ^^this
+    ^^this
       .. .req = req
       .. .res = res
       .. .next = next
@@ -309,5 +309,5 @@ base.controller =
     if not @path?
       throw new ConfigurationError "No path defined for this controller"
 
-    app.all @path, @handle
+    app.all @path, this~handle
 

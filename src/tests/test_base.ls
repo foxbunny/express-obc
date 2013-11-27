@@ -201,13 +201,6 @@ describe 'base.controller' !-> ``it``
     expect c.next .to.equal next
     expect b.dispatch .to.be.called-once
 
-  .. 'route should set up a route for given application' !->
-    app = all: sinon.spy!
-    b = ^^controller
-    b.path = '/foo'
-    b.route app
-    expect app.all .to.be.called-with '/foo', b.handle
-
   .. 'route throws if path is missing' !->
     app = all: sinon.spy!
     b = ^^controller
