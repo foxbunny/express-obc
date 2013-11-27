@@ -14,9 +14,8 @@
     "type": "git",
     "url": "https://github.com/foxbunny/express-obc.git"
   },
-  "main": "lib/index.js",
+  "main": "lib/index",
   "private": false,
-
   "devDependencies": {
     "chai": "~1.8.1",
     "sinon": "~1.7.3",
