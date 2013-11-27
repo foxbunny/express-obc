@@ -1,3 +1,8 @@
+/**!
+ * @author Branko Vukelic <branko@brankovukelic.com>
+ * @license MIT
+ */
+
 require! {
   './exceptions'.ConfigurationError
   './exceptions'.NotImplementedError

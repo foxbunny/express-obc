@@ -1,3 +1,8 @@
+/**!
+ * @author Branko Vukelic <branko@brankovukelic.com>
+ * @license MIT
+ */
+
 require! {
   './base'.controller
   'lodash'
@@ -34,10 +39,35 @@ template.context-mixin =
 
 template.template-response-mixin =
 
+  # ## `templateResponseMixin.view`
+  #
+  # Name of the view to render.
+  #
+  # This property is either a string or function that returns a string. It is
+  # `null` by default.
+  #
   view: null
 
+  # ## `templateResponseMixin.contentType`
+  #
+  # Response content type.
+  #
+  # This property is either a string or a function that returns a string. It is
+  # 'text/html' by default.
+  #
   content-type: 'text/html'
 
+  # ## `templateResponseMixin.render([context])`
+  #
+  # Renders the context object usign a view, and returns it as response.
+  #
+  # This method will take the view specified by the `view` property, and render
+  # the supplied context. The response is returned with content type specified
+  # in the `contentType` property.
+  #
+  # If there are errors during template rendering, it will call the `next`
+  # callback.
+  #
   render: (context = {}) ->
     if not @view?
       throw new ConfigurationError 'No view defined'
@@ -55,7 +85,16 @@ template.template-controller = ^^controller
   .. <<< template.context-mixin
   .. <<< do
 
+    # ## `templateController.allowedMethods`
+    #
+    # Template controller only allows GET method by default.
+    #
     allowed-methods: <[ get ]>
 
+    # ## `templateController.textResponse(data)`
+    #
+    # Renders the template response using the `render` method, passing `data`
+    # as context.
+    #
     text-response: (data) ->
       @render @context data
