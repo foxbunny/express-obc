@@ -1,0 +1,53 @@
+# Express OBC
+
+[Express](http://expressjs.com/) is a server-side web application framework for
+[NodeJS](http://nodejs.org/) platform.
+
+Express OBC is a collection of objects that provide easy-to-use higher-level
+API for handling requests in Express-based apps. OBC stands for object-based
+controllers. As the name suggests, these controllers are based on
+object-oriented design rather than functional/callback-based approach which is
+the default in Express.
+
+Express OBC is still in early development, and as such it is not widely used.
+It currently implements only two basic controllers: base controller (or just
+'controller') and template controller, which augments the base controller by
+providing methods for rendering views.
+
+## Installation
+
+Express OBC can be installed using [NPM](https://npmjs.org/):
+
+    npm install express-obc
+
+## Basic usage
+
+Here is an example of a basic Express OBC controller.
+
+    var controller = require('express-obc').controller;
+    var myController = Object.create(controller);
+
+    myController.route = '/hello/:name.:ext';
+    myController.allowedMethods = ['get'];
+    myController.get = function () {
+      this.respond({name: this.req.params.name});
+    };
+
+    myController.route(app);
+
+Now if we hit the `/hello/foxbunny.json` URL, we will receive a JSON response
+containing `{"name": "foxbunny"}`.
+
+## Documentation
+
+Documentation in markdown format can be found in the `doc` directory.
+
+## Reporting bugs
+
+Please report all bugs to [GitHub issue
+tracker](https://github.com/foxbunny/express-obc/issues).
+
+## License
+
+Express OBC is published under the MIT license.
+
