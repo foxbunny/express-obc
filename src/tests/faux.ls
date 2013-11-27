@@ -38,5 +38,7 @@ faux.response = (props = {}) ->
     set: sinon.spy!
     send: sinon.spy!
     render: sinon.spy!
+    json: sinon.spy!
+    jsonp: sinon.spy!
   res <<< props
 
