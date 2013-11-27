@@ -22,6 +22,9 @@ describe 'base.controller' !-> ``it``
     expect (!-> b.head!) .to.throw NotImplementedError
     expect (!-> b.copy!) .to.throw NotImplementedError
 
+  .. 'default format parameter' !->
+    expect controller.format-parameter .to.equal \format
+
   .. 'options method does not throw' !->
     b = ^^controller
     b.allowed-methods = <[ get post ]>
@@ -90,6 +93,14 @@ describe 'base.controller' !-> ``it``
     b.req.accepts = [value: \application/json]
     expect b.request-format! .to.equal \xml
 
+  .. 'requestFormat should read the format-parameter' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.req.{}params.foo = 'xml'
+    expect b.request-format! .to.equal \text
+    b.format-parameter = \foo
+    expect b.request-format! .to.equal \xml
+
   .. 'dispatch should call method for matching verb' !->
     b = ^^controller
     b.get = sinon.spy!
@@ -117,14 +128,6 @@ describe 'base.controller' !-> ``it``
     b.req = faux.request!
     b.get = null
     expect (!-> b.dispatch!) .to.throw ConfigurationError
-
-  .. 'respond should be passed to handler method by dispatch' !->
-    b = ^^controller
-    b.req = faux.request!
-    b.respond = sinon.spy!
-    b.get = (cb) -> cb!
-    b.dispatch!
-    expect b.respond .to.be.called-once
 
   .. 'respond should call next callback if error is passed' !->
     b = ^^controller

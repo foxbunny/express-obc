@@ -22,13 +22,13 @@ const VALID_FORMATS = <[ json jsonp xml text ]>
 #
 base.controller =
 
-  # ## `path`
+  # ## `controller.path`
   #
   # The path for which this controller with handle request. This property
   #
   path: null
 
-  # ## `allowedMethods`
+  # ## `controller.allowedMethods`
   #
   # Set of HTTP verbs in lower case that the controller accept.
   #
@@ -37,13 +37,22 @@ base.controller =
   #
   allowed-methods: VALID_METHODS
 
-  # ## `allowedFormats`
+  # ## `controller.allowedFormats`
   #
   # Set of allowed response formats.
   #
   # Possible values are 'json', 'jsonp' and 'text'. Default is all three.
   #
   allowed-formats: VALID_FORMATS
+
+  # ## `controller.formatParameter`
+  #
+  # Name of the URL parameter that contains the desired response format.
+  #
+  # Set this to `null` if you do not have such a parameter in the URL. May be
+  # any valid parameter name. Defaults to 'format'.
+  #
+  format-parameter: \format
 
   # ## Verb methods
   #
@@ -62,7 +71,13 @@ base.controller =
   #
   # These objects are the same objects that are used in Express framework.
   #
-  # The usual flow is to end the method by calling `req.send`.
+  # To finish handling the request, you can either use the `res.send()`,
+  # `res.json()` and similar methods, or you can call the controller's
+  # `respond()` method. Respond is different from the standard Express methods
+  # in that it will automatically pick an appropriate format for your data
+  # based on request headers or format URL parameter. On the other hand,
+  # `respond()` always sends HTTP 200 OK so it cannot be used for non-200
+  # responses.
   #
   # Note that `delete` method is called `delete`. Even though it is not a very
   # clean solution, we believe that consistency of this kind is better than
@@ -97,7 +112,7 @@ base.controller =
       'Allow': [v.to-upper-case! for v in @allowed-methods].join ', '
     @res.send 200
 
-  # ## notSupported
+  # ## `controller.notSupported()`
   #
   # Called when request method name is not accepted by the controller. Default
   # implementation simply sends a 'Method not supported' string with HTTP
@@ -106,19 +121,43 @@ base.controller =
   not-supported: !->
     @res.send 405 'Method not supported'
 
-  # ## `base.requestMethodName()`
+  # ## `controller.requestMethodName()`
   #
   # Returns the lower-case name of the HTTP verb for the request being handled.
   #
   request-method-name: ->
     @req.route.method.to-lower-case!
 
-  # ## `base.requestFormat()`
+  # ## `controller.requestFormat()`
   #
   # Returns the request format.
+  #
+  # Return value may be one of the following: 'json', 'jsonp', 'xml', or
+  # 'text'.
+  #
+  # This method evaluates the `allowedFormats` array, and compares it to
+  # request's `Accept` header as well as the `format` parameter if it appears
+  # in the URL. The latter takes precedence over the header.
+  #
+  # The accept headers that are used to determine the format are the following:
+  #
+  #  + application/json: JSON format
+  #  + text/javascript: JSONP format
+  #  + application/xml: XML format
+  #
+  # The format parameter in the URL may contain one of the following:
+  #
+  #  + json: JSON format
+  #  + jsonp: JSONP format
+  #  + xml: XML format
+  #
+  # The 'text' format is a catch-all and always returned if no other formats
+  # match. If you need a more elaborate scheme (or even a simpler one), you
+  # should override this method with your own.
+  #
   request-format: ->
     accepts = @req.accepts?.0?.value
-    format = @req.params?.format
+    format = @req.params?.[@format-parameter]
 
     can-json = \json in @allowed-formats
     can-jsonp = \jsonp in @allowed-formats
@@ -145,7 +184,7 @@ base.controller =
     else
       \text
 
-  # ## `base.dispatch()`
+  # ## `controller.dispatch()`
   #
   # Handles the rquest.
   #
@@ -163,28 +202,61 @@ base.controller =
 
     ## Delegate to appropraite http verb
     if this[verb]?
-      this[verb] this~respond
+      this[verb]!
     else
       throw new ConfigurationError "No handler method for #{verb}"
 
+  # ## `controller.respond(err, data)`
+  #
+  # Takes error object and data and formulates a response.
+  #
+  # If the error object is passed and is not `null`, it will be passed on the
+  # the `next()` callback. Otherwise, appropriate response method will be
+  # chosen based on the requested response format, and it will be passed the
+  # data object.
+  #
   respond: (err, data) ->
     return @next err if err?
     this["#{@request-format!}Response"] data
 
+  # ## `controller.jsonResponse(data)`
+  #
+  # Returns JSON response.
+  #
   json-response: (data) ->
     @res.json 200 data
 
+  # ## `controller.jsonpResponse(data)`
+  #
+  # Returns JSONP reponse.
+  #
   jsonp-response: (data) ->
     @res.jsonp 200 data
 
+  # ## `controller.xmlResponse(data)`
+  #
+  # Returns XML response.
+  #
+  # The `data` argument should be an object that implements `toXml` method.
+  # This method should not expect any arguments and must return a string.
+  #
   xml-response: (data) ->
     @res.set \Content-Type, \application/xml
     @res.send 200 data.to-xml!
 
+  # ## `controller.textResponse(data)`
+  #
+  # Returns text response.
+  #
+  # This method is a dummy that simply coerces `data` to string and returns as
+  # response. It's almost always better to override this method with a more
+  # sensible one, or use a specialized controller like the
+  # `templateController`.
+  #
   text-response: (data) ->
     @res.send 200 "#{data}"
 
-  # ## `base.handle(req, res, next)`
+  # ## `controller.handle(req, res, next)`
   #
   # Clones this object and handles the request with it.
   #
@@ -199,7 +271,7 @@ base.controller =
       .. .next = next
       .. .dispatch!
 
-  # ## `base.route(app, route)`
+  # ## `controller.route(app, route)`
   #
   # Crate routes for an `app` using this controller.
   #
