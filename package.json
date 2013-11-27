@@ -1,7 +1,22 @@
 {
   "name": "express-obc",
   "version": "0.0.1",
-  "private": true,
+  "description" : "Object-based controllers for Express framework",
+  "homepage": "https://github.com/foxbunny/express-obc",
+  "keywords": ["server", "express", "controller", "request", "response", "object"],
+  "author": "Branko Vukelic <branko@brankovukelic.com>",
+  "bugs": {
+    "url": "https://github.com/foxbunny/express-obc/issues",
+    "email": "branko@brankovukelic.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foxbunny/express-obc.git"
+  },
+  "main": "lib/index.js",
+  "private": false,
+
   "devDependencies": {
     "chai": "~1.8.1",
     "sinon": "~1.7.3",
