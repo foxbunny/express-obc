@@ -45,6 +45,51 @@ describe 'base.controller' !-> ``it``
     b.req = faux.request!
     expect b.request-method-name! .to.equal 'get'
 
+  .. 'requestFormat handles JSON requests correctly' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.req.{}params.format = \json
+    b.req.accepts = [value: \application/json]
+    expect b.request-format! .to.equal \json
+
+  .. 'requestFormat handles JSONP requests correctly' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.req.{}params.format = \jsonp
+    b.req.accepts = [value: \text/javascript]
+    expect b.request-format! .to.equal \jsonp
+
+  .. 'requestFormat handles XML requests correctly' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.req.{}params.format = \xml
+    b.req.accepts = [value: \application/xml]
+    expect b.request-format! .to.equal \xml
+
+  .. 'requestFormat handles any other format as text' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.req.{}params.format = \html
+    b.req.accepts = [value: \text/html]
+    b.req.[]accepts.0.value = \text/html
+    expect b.request-format! .to.equal \text
+    b.req.{}params.format = null
+    b.req.accepts = [value: \text/foobar]
+    expect b.request-format! .to.equal \text
+
+  .. 'requestFormat prioritizes format parameter' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.req.{}params.format = \json
+    b.req.accepts = [value: \application/xml]
+    expect b.request-format! .to.equal \json
+    b.req.{}params.format = \jsonp
+    b.req.accepts = [value: \application/json]
+    expect b.request-format! .to.equal \jsonp
+    b.req.{}params.format = \xml
+    b.req.accepts = [value: \application/json]
+    expect b.request-format! .to.equal \xml
+
   .. 'dispatch should call method for matching verb' !->
     b = ^^controller
     b.get = sinon.spy!
@@ -72,6 +117,72 @@ describe 'base.controller' !-> ``it``
     b.req = faux.request!
     b.get = null
     expect (!-> b.dispatch!) .to.throw ConfigurationError
+
+  .. 'respond should be passed to handler method by dispatch' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.respond = sinon.spy!
+    b.get = (cb) -> cb!
+    b.dispatch!
+    expect b.respond .to.be.called-once
+
+  .. 'respond should call next callback if error is passed' !->
+    b = ^^controller
+    b.next = sinon.spy!
+    b.respond true
+    expect b.next .to.be.called-once
+
+  .. 'respond should call appropriate response method' !->
+    b = ^^controller
+    b.req = faux.request!
+    b.json-response = sinon.spy!
+    b.jsonp-response = sinon.spy!
+    b.xml-response = sinon.spy!
+    b.text-response = sinon.spy!
+    data = foo: 'bar'
+
+    b.req.{}params.format = 'json'
+    b.respond null, data
+    expect b.json-response .to.be.called-with data
+
+    b.req.{}params.format = 'jsonp'
+    b.respond null, data
+    expect b.jsonp-response .to.be.called-with data
+
+    b.req.{}params.format = 'xml'
+    b.respond null, data
+    expect b.xml-response .to.be.called-with data
+
+    b.req.{}params.format = null
+    b.respond null, data
+    expect b.text-response .to.be.called-with data
+
+  .. 'jsonResponse calls res.json' !->
+    b = ^^controller
+    b.res = faux.response!
+    b.json-response foo: 'bar'
+    expect b.res.json .to.be.called-with 200, foo: 'bar'
+
+  .. 'jsonpResponse calls res.jsonp' !->
+    b = ^^controller
+    b.res = faux.response!
+    b.jsonp-response foo: 'bar'
+    expect b.res.jsonp .to.be.called-with 200, foo: 'bar'
+
+  .. 'xmlResponse calls res.send' !->
+    b = ^^controller
+    b.res = faux.response!
+    data =
+      foo: 'bar'
+      to-xml: sinon.spy!
+    b.xml-response data
+    expect b.res.send .to.be.called-with 200, data.to-xml.return-values.0
+
+  .. 'textResponse calls res.send' !->
+    b = ^^controller
+    b.res = faux.response!
+    b.text-response 21
+    expect b.res.send .to.be.called-with 200, '21'
 
   .. 'handle should take three arguments and crate a new object' !->
     b = ^^controller
@@ -112,3 +223,14 @@ describe 'base.controller' !-> ``it``
     b.allowed-methods = <[ get post foo bar ]>
     expect (!-> b.route app) .to.throw ConfigurationError
 
+  .. 'route throws if no allowed formats are listed' !->
+    app = all: sinon.spy!
+    b = ^^controller
+    b.allowed-formats = []
+    expect (!-> b.route app) .to.throw ConfigurationError
+
+  .. 'route throws if allowed format is invalid' !->
+    app = all: sinon.spy!
+    b = ^^controller
+    b.allowed-formats = <[ json xml foo ]>
+    expect (!-> b.route app) .to.throw ConfigurationError

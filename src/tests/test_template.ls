@@ -73,17 +73,17 @@ describe 'template-response-mixin' !-> ``it``
 describe 'template-controller' !-> ``it``
 
   .. 'should inherit base controller' !->
-    for k, v of controller when k not in <[ allowedMethods get ]>
+    for k, v of controller when k not in <[ allowedMethods textResponse ]>
       expect template-controller[k] .to.equal v
 
   .. 'should only allow get method' !->
     expect template-controller.allowed-methods .to.deep.equal <[ get ]>
 
-  .. 'should render in get handler' !->
+  .. 'should render in with context handler' !->
     t =  ^^template-controller
     t.render = sinon.spy!
     t.context = sinon.spy!
-    t.get()
+    t.text-response foo: 'bar'
     expect t.render .to.be.called-with t.context.return-values.0
-    expect t.context .to.be.called-once
+    expect t.context .to.be.called-with foo: 'bar'
 

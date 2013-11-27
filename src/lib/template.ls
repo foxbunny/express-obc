@@ -57,5 +57,5 @@ template.template-controller = ^^controller
 
     allowed-methods: <[ get ]>
 
-    get: !->
-      @render @context!
+    text-response: (data) ->
+      @render @context data

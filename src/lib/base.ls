@@ -6,6 +6,7 @@ require! {
 base = module.exports
 
 const VALID_METHODS = <[ get post put patch delete head copy options ]>
+const VALID_FORMATS = <[ json jsonp xml text ]>
 
 # # `controller`
 #
@@ -35,6 +36,14 @@ base.controller =
   # verbs: get, post, put, patch, delete, head, copy, and options.
   #
   allowed-methods: VALID_METHODS
+
+  # ## `allowedFormats`
+  #
+  # Set of allowed response formats.
+  #
+  # Possible values are 'json', 'jsonp' and 'text'. Default is all three.
+  #
+  allowed-formats: VALID_FORMATS
 
   # ## Verb methods
   #
@@ -104,6 +113,38 @@ base.controller =
   request-method-name: ->
     @req.route.method.to-lower-case!
 
+  # ## `base.requestFormat()`
+  #
+  # Returns the request format.
+  request-format: ->
+    accepts = @req.accepts?.0?.value
+    format = @req.params?.format
+
+    can-json = \json in @allowed-formats
+    can-jsonp = \jsonp in @allowed-formats
+    can-xml = \xml in @allowed-formats
+
+    if format?
+      if can-json and format is \json
+        \json
+      else if can-jsonp and format is \jsonp
+        \jsonp
+      else if can-xml and format is \xml
+        \xml
+      else
+        \text
+    else if accepts?
+      if can-json and accepts is 'application/json'
+        \json
+      else if can-jsonp and accepts is 'text/javascript'
+        \jsonp
+      else if can-xml and accepts is 'application/xml'
+        \xml
+      else
+        \text
+    else
+      \text
+
   # ## `base.dispatch()`
   #
   # Handles the rquest.
@@ -122,9 +163,26 @@ base.controller =
 
     ## Delegate to appropraite http verb
     if this[verb]?
-      this[verb]!
+      this[verb] this~respond
     else
       throw new ConfigurationError "No handler method for #{verb}"
+
+  respond: (err, data) ->
+    return @next err if err?
+    this["#{@request-format!}Response"] data
+
+  json-response: (data) ->
+    @res.json 200 data
+
+  jsonp-response: (data) ->
+    @res.jsonp 200 data
+
+  xml-response: (data) ->
+    @res.set \Content-Type, \application/xml
+    @res.send 200 data.to-xml!
+
+  text-response: (data) ->
+    @res.send 200 "#{data}"
 
   # ## `base.handle(req, res, next)`
   #
@@ -159,6 +217,15 @@ base.controller =
     for verb in @allowed-methods
       if verb not in VALID_METHODS
         throw new ConfigurationError "#{verb} is not a valid HTTP verb"
+
+    ## Check if there are any allowed response formats
+    if @allowed-formats.length is 0
+      throw new ConfigurationError "No allowed response formats specified"
+
+    ## Check if all response formats are valid
+    for format in @allowed-formats
+      if format not in VALID_FORMATS
+        throw new ConfigurationError "#{format} is not a valid response format"
 
     if not @path?
       throw new ConfigurationError "No path defined for this controller"
